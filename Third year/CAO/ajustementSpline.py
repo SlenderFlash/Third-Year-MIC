@@ -1,0 +1,128 @@
+﻿# -*- coding: utf-8-sig -*-
+import numpy as np
+import numpy.linalg as npl
+import scipy.sparse as sp
+import scipy.sparse.linalg as spl
+import matplotlib.pyplot as plt
+
+
+# Saisie des points à lisser
+
+
+#  Saisie par instruction dans le code
+#    (retirer le # pour valider les données proposées ; mettre les données souhaitées)
+
+# x = np.array([1.,2.,3.,4.,4.25,4.5,4.75,5.,6.,7.,8.,9.])
+# y = np.array([1.,4.,4.5,2.,2.2,1.6,2.4,2.,4.,6.,7.,7.])
+
+x = np.arange(7.)
+y = np.array([ 1./3,2.,2.,4./3,3.,1.,1./3])
+
+# x = np.array([1.,2.,3.,4.,5.,6.,7.,8.,9.])
+# y = np.array([1.,4.,2.,10.,2.,3.,4.,6.,5.])
+
+# PH métrie : Amoniaque / Acide chloridrique
+# x = np.array([2., 4., 6., 8., 10., 12., 14., 16., 18., 18.5, 19., 19.1, 19.17, 19.3, 19.5, 20., 21., 22., 23., 25.])
+# y = np.array([10.2, 9.9, 9.6, 9.5, 9.3, 9.1, 8.9, 8.7, 8.1, 7.8, 7.2, 6.3, 5.3, 4., 3.1, 2.6, 2.3, 2.1, 2., 1.9])
+
+# PH métrie : Acide méthanoique / soude
+# x = np.array([4., 5., 6., 6.5, 6.7, 7., 7.4, 7.6, 7.8, 8., 8.2, 8.4, 8.6, 8.9, 9.3, 9.5, 10., 10.5, 11., 12., 13.])
+# y = np.array([3.7, 3.8, 4., 4.2, 4.3, 4.5, 4.9, 5.3, 6.1, 8.6, 10.1, 10.5, 10.8, 11., 11.3, 11.4, 11.6, 11.8, 11.9, 12., 12.1])
+
+# saisie lecture d'un fichier
+
+# myfile=open("sub38.dat") # concentration de bactéries substrat 38
+# myfile=open("sub41.dat") # concentration de bactéries substrat 41
+# myfile=open("technofan.dat") # evolution cours de bourse
+
+
+# data=np.loadtxt(myfile)
+# x = data[:,0]
+# y = data[:,1]
+
+# fenetre de viualisation
+xmin, xmax = min(x)-.5, max(x)+0.5
+
+
+# Q0. Paramètres problème
+##########################
+
+# nb de données
+n = len(x)-1
+# liste des h
+h = x[1:]-x[:-1]
+# nb de points pour pour tracé
+neval = 1201 # 1200 segments
+
+# force de lissage
+rhoGlobal = 10.
+# poids de chacune des données par rapport aux autres
+rhoRelatif = np.ones(len(x))
+#exemple : 
+# rhoRelatif[4] = 100000
+# Au bilan
+rho = rhoGlobal*rhoRelatif
+
+
+# 1. Tracer des données
+#########################
+plt.figure(0)
+plt.plot(x,y,'ob')
+plt.xlim(xmin,xmax)
+plt.ylim(min(y)-1,max(y)+1)
+plt.title(u"données à lisser")
+plt.grid()
+plt.show()
+
+
+
+
+# Q2. Détermination des 4-uplets de  la spline d'ajustement
+#################################################################
+
+# a. calcul des sigma''
+#==============================
+
+# i. construction systeme lineaire
+# alphaj = 
+# betaj = h[1:n-1] - 6.*(h[1:n-1]+h[2:n])/(rho[2:n]*(h[1:n-1]**2)*h[2:n]) - 6.*(h[0:n-2]+h[1:n-1])/(rho[1:n-1]*(h[1:n-1]**2)*h[0:n-2])
+# gammaj = 2.*(h[0:n-1]+h[1:n])+ 6./(rho[2:n+1]*h[1:n]**2) + 6./(rho[0:n-1]*h[0:n-1]**2) + 6.*((h[0:n-1]+h[1:n])**2)/(rho[1:n]*(h[0:n-1]**2)*h[1:n]**2)
+# deltaj = 
+# epsj = 
+# chij =  
+                
+# A = sp.diags([alphaj, betaj, gammaj, deltaj, epsj ], [-2,-1,0,+1,+2], format="csc")
+# B = chij
+
+# ii. resolution systeme lineaire
+# -> on fait du solveur direct ce coup-ci mais on pourrait recoder Gauss
+# sigma_seconde = np.zeros(n+1)
+# sigma_seconde[1:-1] = spl.spsolve(A,B)
+
+
+# b. Calcul des sigma'''
+#==============================
+# sigma_tierce = 
+
+# c. Calcul des sigma
+#==============================
+# sigma = 
+
+# d. calcul des sigma'
+#============================
+# sigma_prime = 
+
+# Q3. Évaluation de la spline de lissage
+##############################################
+
+# a. évaluation directe en une multitude de points :
+# def eval_spline(xeval,x,sigma,sigma_prime,sigma_seconde,sigma_tierce) :
+#    return Sigmaxx
+
+# b. évaluation de la spline aux neval points
+# sigma_graphe = 
+
+
+# Q4. Tracé des données et de la spline d'interpolation
+#########################################################
+

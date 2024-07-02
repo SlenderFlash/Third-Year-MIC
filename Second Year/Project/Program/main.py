@@ -1,0 +1,12 @@
+import library.usedfunction as l
+print("Etage 1: Verifier avec stratégie aléatoire")
+l.verifier_alea()
+print("Etage 2: Verifier avec stratégie deterministe:")
+l.verifier_det()
+print("Etage 3: Verifier avec stratégie classique:")
+print("1er fois:")
+l.verifier_class()
+print("2eme fois:")
+l.verifier_class()
+print("3eme fois:")
+l.verifier_class()

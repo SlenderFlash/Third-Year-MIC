@@ -1,0 +1,366 @@
+---
+title: "TP2 : Tests d'hypothèses"
+subtitle: "3 MIC, Statistique inférentielle"
+author: ""
+date: "2023-2024"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 Cas d'une population gaussienne
+
+## 1.1 Test sur la moyenne
+
+Considérons $X_1,\ldots,X_n$ des variables aléatoires i.i.d. de loi
+$\mathcal{N}(m,\sigma^2)$ (où $m$ est inconnue) et soit
+$m_0 \in \mathbb{R}$. On souhaite tester au niveau $\alpha$
+$$\mathcal{H}_0 : m=m_0 \quad \quad \mbox{contre} \quad \quad \mathcal{H}_1 : m> m_0.$$
+
+### 1.1.1 Cas de la variance connue
+
+#### i. Construction du test
+
+La statistique de test vaut :
+$$A_n = \frac{\frac{1}{n}\sum_{i=1}^{n} X_i - m_0}{\frac{\sigma}{\sqrt{n}}}$$.
+
+Sous $\mathcal{H}_0$, elle suit une loi $$A_n \sim \mathcal{N}(0,1)$$.
+
+On rejette lorsque la statistique de test significativement plus élevé
+que une quantile $z_{1-\alpha}$.
+
+#### ii. Calcul de la $p$-valeur du test
+
+La $p$-valeur du test s'écrit :
+
+$$
+\hat{\alpha} = \mathbb{P}(A_n > A_n^{obs}) = 1 - F_{\mathcal{N}(0,1)}(A_n^{obs}) = 1 - \Phi(A_n^{obs})
+$$
+
+où $\phi$ désigne la fonction de répartition d'une $\mathcal{N}(0,1)$.
+
+#### iii. Autres alternatives ?
+
+Si le test est unilatéral dans l'autre sens, i.e. l'on teste
+$$\mathcal{H}_0 : m=m_0 \quad \quad \mbox{contre} \quad \quad \mathcal{H}'_1:m<m_0,$$
+la statistique de test $Z_n$ est
+$$Z_n = A_n = \frac{\frac{1}{n}\sum_{i=1}^{n} X_i - m_0}{\frac{\sigma}{\sqrt{n}}}$$
+et l'on rejette si $Z_n$ est significativement moins éleves que une
+quantile $z_\alpha$. La $p$-valeur s'écrit donc
+$\hat{\alpha} = \mathbb{P}(A_n < A_n^{obs}) = F_{\mathcal{N}(0,1)}(A_n^{obs}) = \Phi(A_n^{obs})$
+
+Si le test est bilatéral, i.e. l'on teste
+$$\mathcal{H}_0 : m=m_0 \quad \quad \mbox{contre} \quad \quad \tilde{\mathcal{H}}_1:m\neq m_0,$$
+la statistique de test $Z_n$ est
+$Z_n = A_n = \frac{\frac{1}{n}\sum_{i=1}^{n} X_i - m_0}{\frac{\sigma}{\sqrt{n}}}$
+et l'on rejette si $Z_n$ est significativement grand absoluement.. La
+$p$-valeur s'écrit donc
+$\hat{\alpha} = \mathbb{P}(|A_n| >| A_n^{obs}|) =2(1 - F_{\mathcal{N}(0,1)}(A_n^{obs})) = 2(1-\Phi(A_n^{obs}))$.
+
+#### iv. Implémentation du test
+
+Complétons la fonction R `test.moy1`.
+
+```{r test.moy1, eval=FALSE}
+test.moy1 <- function(x,sigma2,m0,alternative="greater")
+{
+  Zn_obs = sqrt(length(x))*(mean(x)-m0)/sqrt(sigma2)
+
+  if(alternative=="two.sided"){      # test bilatéral
+    pval = 2*(1-pnorm(Zn_obs))
+  }
+  else{
+    if(alternative=="greater"){      # test unilatéral avec l'alternative H_1
+      pval = 1 - pnorm(Zn_obs)
+    }
+    else{
+      if(alternative=="less"){       # test unilatéral avec l'alternative H'_1
+        pval = pnorm(Zn_obs)}
+    }
+  }
+  
+  attributes(pval)$stat.obs=Zn_obs   # pour renvoyer également la statistique de test observée
+  return(pval)
+}
+```
+
+Rappelons que l'on rejette $\mathcal{H}_0$ au niveau $\alpha$ si la
+$p$-valeur est inférieur à certaine valeurs (normalement 0.05).
+
+Vérification de `test.moy1` (en faisant varier la moyenne théorique `m`
+des $X_i$ et la forme de l'alternative):
+
+```{r test.moy1 ex, eval=FALSE}
+# observation : 
+n=100 ; sigma2=3 ; m=11
+# valeur testée : 
+m0=10
+test.moy1(x=rnorm(n,m,sigma2),sigma2,m0,alternative="greater")
+```
+
+#### v. Proportion de fois où le test rejette l'hypothèse nulle :
+
+Complétons la fonction R `estim.prop.test.moy1`.
+
+```{r estim.prop.test.moy1, eval=FALSE}
+# n : taille de l'échantillon simulé
+# m, sigma2 : moyenne et variance théoriques des échantillons simulées
+# m0 : moyenne testée
+# alpha : niveau prescrit du test
+# K : nombre de simulations pour estimer la proportion de rejets
+estim.prop.test.moy1 <- function(n,m,sigma2,m0,alpha,K,alternative="greater")
+{
+  nb.rejets=0
+  for(k in 1:K)
+  {
+    x = rnorm(n,m,sigma2)
+    pval = test.moy1(x,sigma2,m0,alternative)
+    nb.rejets = nb.rejets + as.integer(pval < alpha)
+  }
+  return(nb.rejets/K)
+}
+```
+
+#### vi. Estimation de la taille du test :
+
+Si l'on fait varier $K$:
+
+```{r test.moy1 taille}
+for (i in 1000*c(1:10)){
+  print(estim.prop.test.moy1(100,11,3,10,0.05,i))
+}
+
+```
+
+On remarque que presque tout les simulations sont rejets
+
+#### vii. Estimation de la puissance du test :
+
+Comparons les puissances théorique et estimée du test pour différentes
+valeurs d'alternatives.
+
+```{r test.moy1 puissance}
+n=1000
+sigma2=2
+m0=5
+alpha=0.05
+
+# Graphe de la puissance théorique sur ]5,5.3]: 
+t=seq(5,5.3,length.out=100)
+puissance.c1 <- function(x, alternative = "greater")
+{
+  if(alternative=="two.sided"){      # test bilatéral
+    p = 1 - pnorm(m0 + sqrt(sigma2/n)*qnorm(1-alpha/2), mean = x, sd = sqrt(sigma2/n)) + pnorm(m0 + sqrt(sigma2/n)*qnorm(alpha/2), mean = x, sd = sqrt(sigma2/n))
+  }
+  else{
+    if(alternative=="greater"){      # test unilatéral avec l'alternative H_1
+      p = 1 - pnorm(m0 + sqrt(sigma2/n)*qnorm(1-alpha), mean = x, sd = sqrt(sigma2/n))
+    }
+    else{
+      if(alternative=="less"){       # test unilatéral avec l'alternative H'_1
+        p = pnorm(m0 + sqrt(sigma2/n)*qnorm(alpha), mean = x, sd = sqrt(sigma2/n))}
+    } 
+  }
+  return(p)
+}
+# A COMPLETER en utilisant la fonction plot(...,type="l")
+s <- sapply(t, puissance.c1)
+plot(t,s,type = 'l')
+
+# Estimation de la puissance en les alternatives (5.05,5.1,5.2,5.3):
+# A COMPLETER en utilisant la fonction points()
+
+```
+
+On remarque que la puissance augmente selons la valeur de m. Par
+ailleurs, en faisant varier `m` dans {5.05,5.1,5.2,5.3}, on remarque que
+la puissance est 0 près de 5 et converge à 1 en 5.3.
+
+### 1.1.2 Cas de la variance inconnue
+
+#### i. Construction du test
+
+Dans ce cas, on doit estimer la variance par
+$$S_n^2 = \sum_{i = 1}^n(X_i - \bar{X_n})^2$$.
+
+On obtient donc la nouvelle statistique de test :
+$$A_n = \frac{\frac{1}{n}\sum_{i=1}^{n} X_i - m_0}{\frac{\sqrt{S_n^2}}{\sqrt{n}}}$$.
+
+Sous $\mathcal{H}_0$, elle suit une loi $$\mathcal{T}(n-1)$$.
+
+On rejette lorsque cette statistique de test significativement plus
+grand que certaine quantile $$z_{1-\alpha}$$
+
+#### ii. Calcul de la $p$-valeur du test
+
+La $p$-valeur du test unilatéral de $\mathcal{H}_0$ contre
+$\mathcal{H}_1$ s'écrit:
+$$
+\hat{\alpha} = \mathbb{P}(A_n > A_n^{obs}) = 1 - F_{\mathcal{T}(n-1)}(A_n^{obs}) = 1 - \Phi(A_n^{obs})
+$$
+. où $F_{T(n)}$ désigne la fonction de répartition d'une Student dégrée
+n.
+
+#### iii. Implémentation du test
+
+Complétons la fonction R `test.moy2`.
+
+```{r test.moy2, eval=FALSE}
+test.moy2 <- function(x,m0)
+{
+  Zn_obs = sqrt(length(x))*(mean(x)-m0)/sqrt(sum((x-mean(x))**2)) # A COMPLETER (remplacer les "...")
+  pval = 1 - pt(Zn_obs,length(x) - 1) # A COMPLETER (remplacer les "...")
+  attributes(pval)$stat.obs=Zn_obs   # pour renvoyer également la statistique de test observée
+  return(pval)
+}
+```
+
+#### iv. Comparaison avec `t.test` :
+
+Comparons avec la fonction de R `t.test`.
+
+```{r test.moy2 t.test}
+help(t.test)
+m=5 ; sigma2=2 ; n=100 ; m0=5
+x=rnorm(n,m,sqrt(sigma2))
+t.test(x, alternative = "g", mu = 5)
+```
+
+On remarque que 5 est dans intervalle de confiance. Par ailleurs, `t`
+correspond à statistique de test, et que `df` correspond à dégree de
+liberté.
+
+### 1.1.3. Exemple des teneurs en fructose
+
+Les observations sont les suivantes. Vérifions que la moyenne empirique
+observée vaut 57 et que la variance empirique corrigée observée vaut
+20.25, i.e. l'écart-type empirique observé vaut 4.5.
+
+```{r fructose}
+fructose=c(65.03,56.40,50.93,58.13,56.63,55.50,56.05,58.58,62.46,50.39)
+mean(fructose)
+var(fructose)
+sd(fructose)
+```
+
+Le fournisseur teste les hypothèses m \< 60 alors que m = 60 en
+supposant la variance connu égale à 25.
+
+```{r fructose test fournisseur}
+test.moy1(x = fructose, alternative = "less", m0 = 60, sigma2 = 25)
+```
+
+Conclusion du fournisseur : on rejette.
+
+Le client teste les hypothèses m \<= 55 en supposant la variance m\>55.
+
+```{r fructose test client}
+test.moy2(x = fructose, m0 = 55)
+```
+
+Conclusion du client : on garde.
+
+# 2 Comparaison de deux échantillons gaussiens
+
+## 2.1 Les données
+
+```{r variete}
+variete1 = c(53.4,64,68.3,65.5,76.9,62.4,70.8)
+variete2 = c(55.1,72,67,71.6,80.4,67.4)
+
+paste("variete1 : moyenne=",mean(variete1)," ; variance=",var(variete1),sep="")
+paste("variete2 : moyenne=",mean(variete2)," ; variance=",var(variete2),sep="")
+```
+
+## 2.2 Test d'égalité des variances
+
+```{r comparaison var}
+help(var.test)
+var.test(variete1, variete2)
+```
+
+Ici, la statistique de test observée vaut <!-- à compléter -->, les
+degrés de liberté de la Fisher sous $\mathcal{H}_0$ sont
+<!-- à compléter --> et la $p$-valeur vaut <!-- à compléter -->.
+
+On en déduit que <!-- à compléter -->.
+
+## 2.3 Test d'égalité des moyennes
+
+```{r comparaison moyenne}
+help(t.test)
+# A COMPLETER
+```
+
+Comme ci-dessus, la statistique de test observée vaut
+<!-- à compléter -->, le degré de liberté de la student sous
+$\mathcal{H}_0$ vaut bien <!-- à compléter -->, et la $p$-valeur vaut
+<!-- à compléter -->.
+
+On en déduit que <!-- à compléter -->.
+
+# 3 Test sur une proportion
+
+## 3.1 Que fait R ?
+
+Afin de comprendre les tests implémentés, nous pouvons calculer sur
+données simulées les quantités d'intérêt :
+
+```{r binom.test}
+p0=0.5 # paramètre testé (sous $H_0$)
+n=100 # taille de l'échantillon
+p=0.45 # vrai paramètre (supposé inconnu dans la construction du test) à faire varier
+Sn_obs=rbinom(1,n,p)
+
+# Test sans approximation gaussienne : 
+binom.test(Sn_obs,n,p0,alternative="less") # test implémenté dans R
+pbinom(Sn_obs,n,p0) # calcul de la p-valeur "à la main"
+
+binom.test(Sn_obs,n,p0,alternative="greater") # test implémenté dans R
+1-pbinom(Sn_obs-1,n,p0) # calcul de la p-valeur "à la main"
+```
+
+On obtient bien le même résultat. Dans le cas de l'alternative
+`"greater"`, on remarque qu'il faut prendre
+$1-F(S_n^{obs}-1) = \mathbb{P}(Y\geq S_n^{obs})$ où $F$ est la fonction
+de répartition de $Y\sim\mathcal{B}(n,p)$. (Il ne faut pas oublier le
+"-1" car on a une loi discrète).
+
+```{r prop.test}
+# Test avec approximation gaussienne : 
+prop.test(Sn_obs,n,p0,alternative="greater",correct=FALSE) # test implémenté dans R
+# statistique de test (asymptotiquement gaussienne centrée réduite) : 
+Zn_obs=sqrt(n)*(Sn_obs/n - p0)/sqrt(p0*(1-p0)) 
+Zn_obs^2 # peut être approchée par une chi^2 à 1 degré de liberté 
+# calcul de la p-valeur "à la main"
+1-pnorm(Zn_obs)
+```
+
+Encore une fois, on obtient bien le même résultat. Remarquons que la
+fonction `prop.test` propose également un version avec correction de
+continuité. Cela permet d'avoir une meilleur approximation de la loi
+(discrete) binomiale par la loi (continue) gaussienne dans le cas
+d'échantillons modérés.
+
+## 3.2 Application au réferundum "chocolatine"/"pain au chocolat"
+
+Afin de savoir si l'on doit dire "chocolatine" ou "pain au chocolat", on
+veut tester
+$$\mathcal{H}_0:p=1/2 \quad \text{contre} \quad \mathcal{H}_1:p<1/2.$$
+Sur les 10 000 personnes, 4987 ont répondu "chocolatine".
+
+```{r chocolatine}
+# Application du test avec approximation gaussienne (comme fait en TD):
+# A COMPLETER
+
+# Application du test "exact" sans approximation gaussienne :
+# A COMPLTER
+```
+
+On obtient bien une $p$-valeur <!-- à compléter -->. On en déduit que
+<!-- à compléter -->.

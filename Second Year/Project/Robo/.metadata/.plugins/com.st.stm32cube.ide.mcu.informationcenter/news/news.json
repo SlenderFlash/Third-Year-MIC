@@ -1,0 +1,17 @@
+data='[ \
+	{ \
+		"image": "news/Visual_1.png", \
+		"link": "https://www.st.com/resource/en/application_note/dm00965631.pdf", \
+		"caption": "" \
+	}, \
+	{ \
+		"image": "news/Visual_2.png", \
+		"link": "", \
+		"caption": "" \
+	}, \
+	{ \
+		"image": "news/Visual_3.png", \
+		"link": "", \
+		"caption": "" \
+	} \
+]';
